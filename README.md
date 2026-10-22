@@ -4,7 +4,7 @@
 
 Built for the **Gnani AI Internship Challenge** using Gnani's speech models.
 
-🔗 **Live app:** https://voice-khata.streamlit.app
+🔗 **Live app:** https://vyapaarvoice.streamlit.app
 
 ---
 
