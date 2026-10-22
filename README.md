@@ -1,152 +1,153 @@
-# 🎙️ VyapaarVoice
+# VyapaarVoice — Voice-First Digital Ledger
 
-**A voice-first digital ledger (khata) for small shopkeepers.** Speak in Hindi, Hinglish or English, and VyapaarVoice writes the entry for you: no typing, no forms.
+[![Live Demo](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://vyapaarvoice.streamlit.app)
 
-Built for the **Gnani AI Internship Challenge** using Gnani's speech models.
+**VyapaarVoice** is a multilingual, voice-first digital ledger designed to simplify bookkeeping for small businesses in India. It enables shopkeepers to record sales, purchases, credit transactions, and payments using natural speech in Hindi, Marathi, or English, with spoken feedback to make everyday accounting more accessible.
 
-🔗 **Live app:** https://vyapaarvoice.streamlit.app
+🔗 **Live Demo:** https://vyapaarvoice.streamlit.app
 
----
+## 🚀 Key Features
 
-## Why
+- **Multilingual Voice Input:** Record transactions using speech in Hindi, Marathi, and English.
+- **Speech-to-Text:** Converts spoken commands into text using Gnani.ai speech recognition.
+- **Natural-Language Transaction Parsing:** Extracts transaction details such as product, amount, quantity, customer or supplier, and due date.
+- **Transaction Management:** Supports sales, purchases, credit sales, customer payments, and supplier payments.
+- **Spoken Feedback:** Provides audio confirmations and asks users to repeat unclear commands.
+- **Transaction Review:** Lets users verify extracted details before saving them.
+- **Digital Ledger:** Maintains transaction records for reviewing and tracking business activity.
+- **Due-Date Tracking:** Helps identify upcoming and overdue payments.
+- **Simple Web Interface:** Built with Streamlit for an accessible, browser-based experience.
 
-Millions of small shopkeepers in India still keep a paper *khata* for sales and *udhaar* (credit). Typing into an app is slow and awkward in a busy shop, and many shopkeepers are more comfortable speaking than typing. VyapaarVoice lets them just say what happened.
+## 🛠️ Tech Stack
 
-> *"सुरेश को 3 किलो चावल 150 उधार"* → saved as a credit entry for Suresh, ₹150.
-
-## Features
-
-- **Speak to record:** sales, credit (udhaar) and payments received, in Hindi, Hinglish or English
-- **Smart parsing:** extracts the customer, item, quantity, amount and entry type from natural speech
-- **Safety net for unclear speech:** if the app isn't sure what it heard, it asks you to check and correct the entry in a short form before saving
-- **Spoken confirmation:** every saved entry is read back to you
-- **End-of-day summary:** today's sales, today's credit, and who owes the most, shown and spoken aloud
-- **Live dashboard:** today's credit and cash cards plus a clean transaction table
-- **Accounts and privacy:** email sign-up and login; every user sees only their own ledger
-
-## How it works
-
-```
- Mic ──► Gnani Prisma (speech-to-text)
-              │
-              ▼
-        khata_parser.py ──► confident? ── yes ──► save to ledger
-              │                                   │
-              no                                  ▼
-              ▼                         Gnani Timbre (text-to-speech)
-      correction form ──► save          reads the confirmation aloud
-```
-
-| Layer | Tech |
+| Technology | Purpose |
 |---|---|
-| UI | Streamlit with custom CSS |
-| Speech-to-text | Gnani Vachana **Prisma** |
-| Text-to-speech | Gnani Vachana **Timbre** |
-| Auth and database | Supabase (Auth + Postgres with Row Level Security) |
-| Parsing | Rule-based parser in `khata_parser.py` |
+| Python | Application logic and transaction processing |
+| Streamlit | Interactive web application |
+| Gnani.ai Speech APIs | Speech-to-text and text-to-speech |
+| Pandas | Transaction data processing |
+| CSV | Local transaction storage |
 
-## Project structure
+## 💡 Example Usage
 
-```
-app.py            Streamlit UI, login/sign-up, voice flow
-gnani.py          Gnani speech-to-text and text-to-speech calls
-khata_parser.py   Turns a transcript into a structured ledger entry
-ledger.py         Reads and writes entries in Supabase, builds spoken summaries
-test_parser.py    Tests for the parser
-requirements.txt  Python dependencies
-```
+Speak naturally to record a transaction.
 
-## Run it locally
+**Example 1 — Sale**
 
-**1. Clone and install**
+> "Sold five kg sugar for five hundred rupees."
+
+Expected transaction details:
+- Type: Sale
+- Item: Sugar
+- Quantity: 5 kg
+- Amount: ₹500
+
+**Example 2 — Purchase**
+
+> "Bought two litres oil for three hundred and sixty rupees."
+
+Expected transaction details:
+- Type: Purchase
+- Item: Oil
+- Quantity: 2 litres
+- Amount: ₹360
+
+**Example 3 — Credit Sale**
+
+> "Amit bought rice for eight hundred rupees and will pay in ten days."
+
+Expected transaction details:
+- Type: Credit sale
+- Customer: Amit
+- Item: Rice
+- Amount: ₹800
+- Due date: 10 days later
+
+The extracted details should be reviewed before saving. Exact recognition depends on the speech transcript and the transaction parser.
+
+## ⚙️ Run Locally
+
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/surbhi-sg/VyapaarVoice.git
-cd VyapaarVoice
-python -m venv venv
-venv\Scripts\activate        # Windows  (macOS/Linux: source venv/bin/activate)
+git clone https://github.com/Harshgangapurkar/vyapaarvoice.git
+cd vyapaarvoice
+```
+
+### 2. Create and activate a virtual environment
+
+**Windows PowerShell:**
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+**macOS / Linux:**
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
+
+### 3. Install dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
-**2. Set up Supabase** (free tier is enough)
+### 4. Configure the Gnani.ai API key
 
-1. Create a project at [supabase.com](https://supabase.com).
-2. In *Authentication → Sign In / Providers → Email*, turn **Confirm email** off for easy testing (or leave it on and confirm via email).
-3. In the *SQL Editor*, run:
+Create a `.env` file in the project root if your local configuration uses environment variables:
 
-```sql
-create table public.entries (
-  id bigint generated always as identity primary key,
-  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
-  time text not null,
-  type text not null,
-  customer text default '',
-  item text default '',
-  qty text default '',
-  amount numeric default 0,
-  heard text default ''
-);
-
-alter table public.entries enable row level security;
-
-create policy "read own rows" on public.entries
-  for select to authenticated using (user_id = auth.uid());
-
-create policy "add own rows" on public.entries
-  for insert to authenticated with check (user_id = auth.uid());
+```env
+GNANI_API_KEY=your_gnani_api_key
 ```
 
-**3. Add your keys**
+Replace the placeholder with your own API key. Check the application's configuration if your version uses a different variable name.
 
-Create `.streamlit/secrets.toml` (already git-ignored):
+For Streamlit Community Cloud, configure the key under **App settings → Secrets**, using the secret format expected by your application.
 
-```toml
-SUPABASE_URL = "https://YOUR-PROJECT.supabase.co"
-SUPABASE_KEY = "your-anon-or-publishable-key"   # never the service_role key
-GNANI_API_KEY = "your-gnani-api-key"
-```
+**Never commit API keys, `.env` files, or other secrets to GitHub.**
 
-For local runs, create a `.env` file in the project root (same folder as `app.py`) and add `GNANI_API_KEY=your-gnani-api-key`. `gnani.py` reads this variable using `python-dotenv`. Do not commit `.env` to GitHub.
-
-**4. Run**
+### 5. Start the application
 
 ```bash
 streamlit run app.py
 ```
 
-## Deploy on Streamlit Community Cloud
+Open the local URL displayed in the terminal.
 
-1. Push the repo to GitHub.
-2. Create the app on [share.streamlit.io](https://share.streamlit.io) and point it at `app.py`.
-3. Under *Settings → Secrets*, paste the same three keys as above.
+## 🔐 Privacy and Data Storage
 
-## Privacy and security
+VyapaarVoice is currently a prototype intended to demonstrate voice-driven bookkeeping.
 
-- Passwords are handled by Supabase Auth and are never stored by this app.
-- **Row Level Security** is enabled, so the database itself only returns rows belonging to the logged-in user.
-- Only the public (anon/publishable) Supabase key is used. The `service_role` key is never used or committed.
-- API keys live in Streamlit secrets or `.env`, both excluded from Git.
-- This is a prototype. The project owner can see stored data in the Supabase dashboard, so don't enter sensitive real-world data into the public demo.
+- The current no-login version uses local CSV storage.
+- A publicly accessible demo should only be used with sample or non-sensitive transaction data.
+- Local files on hosted environments may not persist across restarts or redeployments.
+- The application should not be treated as a production accounting system without stronger data protection, persistent storage, access controls, and transaction validation.
 
-## Roadmap
+## 🔮 Future Improvements
 
-- Password reset and email verification
-- Edit and delete entries
-- Per-customer balance view and payment reminders
-- Export to Excel or PDF
-- More languages (Marathi, Tamil, Bengali and others supported by Gnani)
-- Offline-friendly mobile app
+- AI-powered multilingual transaction extraction.
+- Better handling of regional accents and mixed-language speech.
+- Conversational clarification for ambiguous transactions.
+- Persistent cloud database integration.
+- Customer balances, supplier balances, and outstanding-payment reports.
+- Automated payment reminders and daily voice summaries.
+- Improved transaction validation and audit history.
 
-## Acknowledgements
+## 🎯 Project Goal
 
-- [Gnani.ai](https://gnani.ai) for the Vachana speech APIs (Prisma STT and Timbre TTS)
-- [Supabase](https://supabase.com) and [Streamlit](https://streamlit.io)
-- Built with help from Claude
+The goal of VyapaarVoice is to make digital bookkeeping simpler and more accessible for small Indian businesses by allowing shopkeepers to manage routine transactions in the languages they already speak.
 
-## Author
+## 👨‍💻 Author
 
-**Surbhi** · [GitHub @surbhi-sg](https://github.com/surbhi-sg)
+**Harsh Gangapurkar**
 
+- GitHub: [@Harshgangapurkar](https://github.com/Harshgangapurkar)
+- Live Project: [VyapaarVoice](https://vyapaarvoice.streamlit.app)
 
-## No-login local mode
-This version does not require login, signup, Supabase credentials, or Streamlit secrets. Ledger entries are saved locally in `khata.csv` next to `app.py`. Keep backups of this file; data is local to this deployment. Gnani.ai credentials remain configured separately as described in `.env.example`.
+---
+
+*Built with Python, Streamlit, and Gnani.ai speech technology.*
